@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18121" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="oTy-fM-cZe">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18092"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Item 2-->
+        <scene sceneID="Y8d-1W-LaX">
+            <objects>
+                <viewController id="vm3-72-VT4" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ftS-Xk-wc8">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="aiU-A6-Kca"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                    <tabBarItem key="tabBarItem" title="Item 2" id="lYU-WP-Evd"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="kEu-AM-qeI" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1656" y="396"/>
+        </scene>
+        <!--Call-->
+        <scene sceneID="tNh-2J-qiD">
+            <objects>
+                <viewController id="g9j-Wu-RXm" customClass="ViewController" customModule="Freigabe" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="BjG-Ut-UgI">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Онищук Владислав Група ІВ-82 ЗК ІВ-8218" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WTN-I1-Dri">
+                                <rect key="frame" x="130" y="417.5" width="154.5" height="61"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="VDO-Eh-SS4"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="WTN-I1-Dri" firstAttribute="centerX" secondItem="BjG-Ut-UgI" secondAttribute="centerX" id="Kfo-Go-8ch"/>
+                            <constraint firstItem="WTN-I1-Dri" firstAttribute="centerY" secondItem="BjG-Ut-UgI" secondAttribute="centerY" id="oXR-33-nkG"/>
+                            <constraint firstItem="WTN-I1-Dri" firstAttribute="centerX" secondItem="BjG-Ut-UgI" secondAttribute="centerX" id="u3Q-bq-HZe"/>
+                            <constraint firstItem="WTN-I1-Dri" firstAttribute="centerY" secondItem="BjG-Ut-UgI" secondAttribute="centerY" id="wkC-BI-Akj"/>
+                        </constraints>
+                    </view>
+                    <tabBarItem key="tabBarItem" title="Call" image="drop.triangle" catalog="system" id="NE3-8c-X9s"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="4CF-8G-Wgc" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1656" y="-211"/>
+        </scene>
+        <!--Tab Bar Controller-->
+        <scene sceneID="Mq5-wi-orJ">
+            <objects>
+                <tabBarController id="oTy-fM-cZe" sceneMemberID="viewController">
+                    <tabBar key="tabBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="Y0B-th-stG">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="49"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </tabBar>
+                    <connections>
+                        <segue destination="g9j-Wu-RXm" kind="relationship" relationship="viewControllers" id="irP-Dc-cbo"/>
+                        <segue destination="vm3-72-VT4" kind="relationship" relationship="viewControllers" id="Y1W-Dz-Iff"/>
+                    </connections>
+                </tabBarController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="3gz-Ye-1uw" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="766" y="92"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="drop.triangle" catalog="system" width="128" height="112"/>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>
