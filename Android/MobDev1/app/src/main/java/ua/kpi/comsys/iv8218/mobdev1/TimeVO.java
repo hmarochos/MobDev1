@@ -40,7 +40,7 @@ public class TimeVO {
 
     @SuppressLint("DefaultLocale")
     public String getTime() {
-        return String.format("%d:%d:%d %sM", hour>12? hour-12: hour == 0? 12: hour, minute, seconds, hour<12? "A": "P");
+        return String.format("%02d:%02d:%02d %sM", hour>12? hour-12: hour == 0? 12: hour, minute, seconds, hour<12? "A": "P");
     }
 
     private int getTimeInSec(){
