@@ -2,6 +2,7 @@ package ua.kpi.comsys.iv8218.mobdev1.ui.notifications;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,6 +65,8 @@ public class NotificationsFragment extends Fragment {
                 TextView textTitle = new TextView(root.getContext());
                 textTitle.setId(textTitle.hashCode());
                 textTitle.setPadding(0, 1, 5, 1);
+                textTitle.setEllipsize(TextUtils.TruncateAt.END);
+                textTitle.setMaxLines(3);
                 textTitle.setText(movie.getTitle());
                 ConstraintLayout.LayoutParams textTitleParams =
                         new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
