@@ -47,4 +47,5 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation 'com.daimajia.swipelayout:library:1.2.0'
 }
