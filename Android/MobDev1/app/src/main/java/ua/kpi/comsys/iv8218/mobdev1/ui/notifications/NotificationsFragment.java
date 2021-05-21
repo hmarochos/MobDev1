@@ -1,12 +1,18 @@
 package ua.kpi.comsys.iv8218.mobdev1.ui.notifications;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,14 +23,17 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RawRes;
+import androidx.annotation.RequiresApi;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.daimajia.swipe.SwipeLayout;
@@ -34,96 +43,79 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import ua.kpi.comsys.iv8218.mobdev1.R;
 
 public class NotificationsFragment extends Fragment {
 
-    private HashMap<ConstraintLayout, Movie> moviesMap;
-    LinearLayout movieList;
-    private View root;
+    private static HashMap<SwipeLayout, Movie> moviesMap;
+    private static LinearLayout movieList;
+    private static View root;
+    private static TextView noItems;
+    private static ProgressBar loadingBar;
+    private static Set<SwipeLayout> removeSet;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         root = inflater.inflate(R.layout.fragment_notifications, container, false);
-
+        setRetainInstance(true);
         movieList = root.findViewById(R.id.scroll_lay);
         moviesMap = new HashMap<>();
 
-        try {
-            ArrayList<Movie> movies = parseMovies(readTextFile(root.getContext(), R.raw.movieslist));
-            for (Movie movie :
-                    movies) {
-                addNewMovie(root, movieList, movie);
-            }
-        } catch (Exception e) {
-            System.err.println("Incorrect content of JSON file!");
-            e.printStackTrace();
-        }
+        noItems = root.findViewById(R.id.no_movies_view);
+        loadingBar = root.findViewById(R.id.loading_bar);
 
-        SearchView simpleSearchView = root.findViewById(R.id.search_view);
+        removeSet = new HashSet<>();
 
-        simpleSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        SearchView searchView = root.findViewById(R.id.search_view);
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String newText) {
-                int countResults = 0;
-                for (ConstraintLayout movie :
-                        moviesMap.keySet()) {
-                    if (newText == null){
-                        ((SwipeLayout) movie.getParent()).setVisibility(View.VISIBLE);
-                        countResults++;
-                    }
-                    else {
-                        if (moviesMap.get(movie).getTitle().toLowerCase()
-                                .contains(newText.toLowerCase()) || newText.length() == 0){
-                            ((SwipeLayout) movie.getParent()).setVisibility(View.VISIBLE);
-                            countResults++;
-                        }
-                        else
-                            ((SwipeLayout) movie.getParent()).setVisibility(View.GONE);
-                    }
-                }
-
-                if (countResults == 0){
-                    root.findViewById(R.id.no_movies_view).setVisibility(View.VISIBLE);
+            public boolean onQueryTextSubmit(String query) {
+                removeSet.addAll(moviesMap.keySet());
+                if (query.length() >= 3) {
+                    AsyncLoadMovies aTask = new AsyncLoadMovies();
+                    loadingBar.setVisibility(View.VISIBLE);
+                    noItems.setVisibility(View.GONE);
+                    aTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, query);
                 }
                 else {
-                    root.findViewById(R.id.no_movies_view).setVisibility(View.GONE);
+                    for (SwipeLayout swipeLayout : removeSet) {
+                        binClicked(swipeLayout);
+                    }
+                    removeSet.clear();
                 }
                 return false;
             }
 
             @Override
-            public boolean onQueryTextChange(String newText) {
-                int countResults = 0;
-                for (ConstraintLayout movie :
-                        moviesMap.keySet()) {
-                    if (newText == null){
-                        ((SwipeLayout) movie.getParent()).setVisibility(View.VISIBLE);
-                        countResults++;
-                    }
-                    else {
-                        if (moviesMap.get(movie).getTitle().toLowerCase()
-                                .contains(newText.toLowerCase()) || newText.length() == 0){
-                            ((SwipeLayout) movie.getParent()).setVisibility(View.VISIBLE);
-                            countResults++;
-                        }
-                        else
-                            ((SwipeLayout) movie.getParent()).setVisibility(View.GONE);
-                    }
-                }
-
-                if (countResults == 0){
-                    root.findViewById(R.id.no_movies_view).setVisibility(View.VISIBLE);
+            public boolean onQueryTextChange(String query) {
+                removeSet.addAll(moviesMap.keySet());
+                if (query.length() >= 3) {
+                    AsyncLoadMovies aTask = new AsyncLoadMovies();
+                    loadingBar.setVisibility(View.VISIBLE);
+                    noItems.setVisibility(View.GONE);
+                    aTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, query);
                 }
                 else {
-                    root.findViewById(R.id.no_movies_view).setVisibility(View.GONE);
+                    for (SwipeLayout swipeLayout : removeSet) {
+                        binClicked(swipeLayout);
+                    }
+                    removeSet.clear();
                 }
                 return false;
             }
@@ -147,7 +139,7 @@ public class NotificationsFragment extends Fragment {
                         inputYear.getText().toString().length() != 0 &&
                         inputType.getText().toString().length() != 0) {
 
-                    addNewMovie(root, movieList, new Movie(inputTitle.getText().toString(),
+                    addNewMovie(new Movie(inputTitle.getText().toString(),
                             inputYear.getText().toString(), "",
                             inputType.getText().toString(), ""));
                     changeLaySizes();
@@ -166,6 +158,29 @@ public class NotificationsFragment extends Fragment {
         return root;
     }
 
+    protected static void loadMovies(ArrayList<Movie> movies){
+        for (SwipeLayout swipeLayout : removeSet) {
+            binClicked(swipeLayout);
+        }
+        if (movies != null) {
+            removeSet.clear();
+            if (movies.size() > 0) {
+                noItems.setVisibility(View.GONE);
+                for (Movie movie :
+                        movies) {
+                    addNewMovie(movie);
+                }
+            } else {
+                noItems.setVisibility(View.VISIBLE);
+            }
+        }
+        else {
+            noItems.setVisibility(View.VISIBLE);
+            Toast.makeText(root.getContext(), "Cannot load data!", Toast.LENGTH_LONG).show();
+        }
+        loadingBar.setVisibility(View.GONE);
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -178,19 +193,22 @@ public class NotificationsFragment extends Fragment {
         ((Activity) root.getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int width = displayMetrics.widthPixels;
 
-        for (ConstraintLayout movieshelf :
+        for (SwipeLayout movieshelf :
                 moviesMap.keySet()) {
             movieshelf.getChildAt(0).setLayoutParams(
                     new ConstraintLayout.LayoutParams(width/3, width/3));
         }
     }
 
-    public void binClicked(SwipeLayout swipeLayout){
+    public static void binClicked(SwipeLayout swipeLayout){
         moviesMap.remove(swipeLayout);
         movieList.removeView(swipeLayout);
+        if (moviesMap.keySet().isEmpty()){
+            noItems.setVisibility(View.VISIBLE);
+        }
     }
 
-    private void addNewMovie(View root, LinearLayout movieList, Movie movie){
+    private static void addNewMovie(Movie movie){
         SwipeLayout swipeLay = new SwipeLayout(root.getContext());
         swipeLay.setShowMode(SwipeLayout.ShowMode.PullOut);
         swipeLay.setLayoutParams(
@@ -224,6 +242,14 @@ public class NotificationsFragment extends Fragment {
             }
         });
 
+        ProgressBar loadingImageBar = new ProgressBar(root.getContext());
+        loadingImageBar.getIndeterminateDrawable().setColorFilter(
+                ContextCompat.getColor(root.getContext(), R.color.purple_500),
+                android.graphics.PorterDuff.Mode.MULTIPLY);
+        loadingImageBar.setVisibility(View.GONE);
+        loadingImageBar.setId(loadingImageBar.hashCode());
+        movieLayTmp.addView(loadingImageBar);
+
         ImageView imageTmp = new ImageView(root.getContext());
         imageTmp.setId(imageTmp.hashCode());
         ConstraintLayout.LayoutParams imgParams =
@@ -232,6 +258,12 @@ public class NotificationsFragment extends Fragment {
             imageTmp.setImageResource(
                     getResId(movie.getPoster().toLowerCase()
                             .split("\\.")[0], R.drawable.class));
+        imageTmp.setImageResource(R.drawable.no_image);
+        if (movie.getPoster().length() != 0){
+            imageTmp.setVisibility(View.INVISIBLE);
+            loadingImageBar.setVisibility(View.VISIBLE);
+            new DownloadImageTask(imageTmp, loadingImageBar, root.getContext()).execute(movie.getPoster());
+        }
         movieLayTmp.addView(imageTmp, 0, imgParams);
 
         ConstraintLayout textConstraint = new ConstraintLayout(root.getContext());
@@ -310,31 +342,21 @@ public class NotificationsFragment extends Fragment {
         movieLayTmpSet.connect(textConstraint.getId(), ConstraintSet.START,
                 imageTmp.getId(), ConstraintSet.END);
 
+        movieLayTmpSet.connect(loadingImageBar.getId(), ConstraintSet.START,
+                imageTmp.getId(), ConstraintSet.START);
+        movieLayTmpSet.connect(loadingImageBar.getId(), ConstraintSet.TOP,
+                imageTmp.getId(), ConstraintSet.TOP);
+        movieLayTmpSet.connect(loadingImageBar.getId(), ConstraintSet.END,
+                imageTmp.getId(), ConstraintSet.END);
+        movieLayTmpSet.connect(loadingImageBar.getId(), ConstraintSet.BOTTOM,
+                imageTmp.getId(), ConstraintSet.BOTTOM);
+
         movieLayTmpSet.constrainWidth(textConstraint.getId(), ConstraintSet.MATCH_CONSTRAINT);
         movieLayTmpSet.constrainHeight(textConstraint.getId(), ConstraintSet.MATCH_CONSTRAINT);
 
         movieLayTmpSet.applyTo(movieLayTmp);
 
-        moviesMap.put(movieLayTmp, movie);
-    }
-
-    public static String readTextFile(Context context, @RawRes int id){
-        InputStream inputStream = context.getResources().openRawResource(id);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        byte[] buffer = new byte[1024];
-        int size;
-        try {
-            while ((size = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, size);
-            }
-            outputStream.close();
-            inputStream.close();
-        } catch (IOException e) {
-            System.err.println("File cannot be reading!");
-            e.printStackTrace();
-        }
-        return outputStream.toString();
+        moviesMap.put(swipeLay, movie);
     }
 
     public static int getResId(String resName, Class<?> c) {
@@ -347,23 +369,105 @@ public class NotificationsFragment extends Fragment {
         }
     }
 
-    private ArrayList<Movie> parseMovies(String jsonText) throws ParseException {
-        ArrayList<Movie> result = new ArrayList<>();
+    private static class AsyncLoadMovies extends AsyncTask<String, Void, ArrayList<Movie>> {
 
-        JSONObject jsonObject = (JSONObject) new JSONParser().parse(jsonText);
+        private String getRequest(String url) throws IOException{
+            StringBuilder result = new StringBuilder();
 
-        JSONArray movies = (JSONArray) jsonObject.get("Search");
-        for (Object movie : movies) {
-            JSONObject tmp = (JSONObject) movie;
-            result.add(new Movie(
-                    (String) tmp.get("Title"),
-                    (String) tmp.get("Year"),
-                    (String) tmp.get("imdbID"),
-                    (String) tmp.get("Type"),
-                    (String) tmp.get("Poster")
-            ));
+            URL getReq = new URL(url);
+            URLConnection movieConnection = getReq.openConnection();
+            BufferedReader in = new BufferedReader(new InputStreamReader(movieConnection.getInputStream()));
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null)
+                result.append(inputLine).append("\n");
+
+            in.close();
+            return result.toString();
         }
 
-        return result;
+        private ArrayList<Movie> parseMovies(String jsonText) throws ParseException {
+            ArrayList<Movie> result = new ArrayList<>();
+
+            JSONObject jsonObject = (JSONObject) new JSONParser().parse(jsonText);
+
+            JSONArray movies = (JSONArray) jsonObject.get("Search");
+            for (Object movie : movies) {
+                JSONObject tmp = (JSONObject) movie;
+                result.add(new Movie(
+                        (String) tmp.get("Title"),
+                        (String) tmp.get("Year"),
+                        (String) tmp.get("imdbID"),
+                        (String) tmp.get("Type"),
+                        (String) tmp.get("Poster")
+                ));
+            }
+
+            return result;
+        }
+
+        private ArrayList<Movie> search(String newText){
+            String jsonResponse = String.format("http://www.omdbapi.com/?apikey=7e9fe69e&s=\"%s\"&page=1", newText);
+            try {
+                ArrayList<Movie> movies = parseMovies(getRequest(jsonResponse));
+                return movies;
+            } catch (Exception e) {
+                System.err.println("Incorrect content of JSON file!");
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        @Override
+        protected ArrayList<Movie> doInBackground(String... strings) {
+            return search(strings[0]);
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        @Override
+        protected void onPostExecute(ArrayList<Movie> movies) {
+            super.onPostExecute(movies);
+            loadMovies(movies);
+        }
+    }
+
+    public static class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        @SuppressLint("StaticFieldLeak")
+        ImageView bmImage;
+        @SuppressLint("StaticFieldLeak")
+        ProgressBar loadingBar;
+        @SuppressLint("StaticFieldLeak")
+        Context context;
+
+        public DownloadImageTask(ImageView bmImage, ProgressBar loadingBar, Context context) {
+            this.bmImage = bmImage;
+            this.loadingBar = loadingBar;
+            this.context = context;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            if (result != null)
+                bmImage.setImageBitmap(result);
+            else {
+                bmImage.setBackgroundResource(R.drawable.no_image);
+                Toast.makeText(context, "Cannot load data!", Toast.LENGTH_LONG).show();
+            }
+            loadingBar.setVisibility(View.GONE);
+            bmImage.setVisibility(View.VISIBLE);
+        }
     }
 }
